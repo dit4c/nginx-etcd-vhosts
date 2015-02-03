@@ -1,13 +1,17 @@
 {
   "name": "nginx-etcd-vhosts",
   "description": "Drop-in replacement for hipache (with etcd) using nginx vhosts",
-  "maintainers": [{
-     "name": "Tim Dettrick",
-     "email": "t.dettrick@uq.edu.au"
-  }],
-  "licenses": [{
-    "type": "MIT"
-  }],
+  "maintainers": [
+    {
+      "name": "Tim Dettrick",
+      "email": "t.dettrick@uq.edu.au"
+    }
+  ],
+  "licenses": [
+    {
+      "type": "MIT"
+    }
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/dit4c/nginx-etcd-vhosts.git"
@@ -15,6 +19,7 @@
   "dependencies": {
     "coffee-script": "^1.9.0",
     "etcd-live-collection": "^0.1.2",
+    "etcdjs": "^2.0.2",
     "lodash": "^3.0.1"
   },
   "scripts": {}
