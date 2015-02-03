@@ -9,7 +9,7 @@ Nginx has supported websockets for some time now, so unlike in the dotCloud expe
 ## Limitations
 
  * Cannot handle different protocols for backends of a single frontend. eg. `["foo", "http://bar:9000", "https://baz:9001"]`
- * Reloads won't be
+ * Running user must be able to reload nginx
 
 ## Template Data
 
@@ -17,34 +17,40 @@ The Hipache key-value pair is converted into JSON suitable for Nginx templates.
 
 For instance, `frontend:my.example.com` with a value of:
 
-    ["example", "http://bar:9000", "http://baz:9001"]
+```json
+["example", "http://bar:9000", "http://baz:9001"]
+```
 
 is converted to:
 
-    {
-      "domain": "my.example.com",
-      "domain_hashed": "e1389c9a53847d15700daf57515e5fc3e023644ad95345c09b32ef9d757b45d6",
-      "name": "example",
-      "protocol": "http",
-      "servers": ["bar:9000", "baz:9000"]
-    }
+```json
+{
+  "domain": "my.example.com",
+  "domain_hashed": "e1389c9a53847d15700daf57515e5fc3e023644ad95345c09b32ef9d757b45d6",
+  "name": "example",
+  "protocol": "http",
+  "servers": ["bar:9000", "baz:9000"]
+}
+```
 
 ## Template
 
 Here's an example template:
 
-    upstream vhost_backend_{{domain_hashed}} {
-      {{#servers}}
-      server {{.}};
-      {{/servers}}
-    }
+```nginx
+upstream vhost_backend_{{domain_hashed}} {
+  {{#servers}}
+  server {{.}};
+  {{/servers}}
+}
 
-    server {
-      listen  [::]:443 ssl spdy ipv6only=off;
-      server_name  {{domain}};
+server {
+  listen  [::]:443 ssl spdy ipv6only=off;
+  server_name  {{domain}};
 
-      location / {
-        proxy_set_header "X-Server-Name" "{{name}}"
-        proxy_pass {{protocol}}://vhost_backend_{{domain_hashed}};
-      }
-    }
+  location / {
+    proxy_set_header "X-Server-Name" "{{name}}"
+    proxy_pass {{protocol}}://vhost_backend_{{domain_hashed}};
+  }
+}
+```
