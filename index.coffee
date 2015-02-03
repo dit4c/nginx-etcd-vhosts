@@ -1,26 +1,18 @@
 'use strict';
 
 env = process.env
-crypto = require('crypto')
+async = require('async')
+child_process = require('child_process')
+fs = require('fs')
+path = require('path')
 url = require('url')
 etcdjs = require('etcdjs')
 liveCollection = require('etcd-live-collection')
 _ = require("lodash")
-
-etcdPeers = (env.ETCDCTL_PEERS || "127.0.0.1:2379").split(',')
-etcdPath = env.HIPACHE_PATH || "/"
-
-etcd = etcdjs(etcdPeers)
-collection = liveCollection(etcd, etcdPath)
-
-loggerFor = (name) ->
-  (msg) -> console.log("["+name+"] "+msg)
+Hogan = require('hogan.js')
 
 isFrontend = (key) ->
   _.startsWith(key.split('/').pop(), "frontend:")
-
-sha256 = (s) ->
-  crypto.createHash('sha256').update(s).digest('hex')
 
 asTemplateData = (key, value) ->
   domain = key.split('/').pop().split(':').pop()
@@ -31,14 +23,86 @@ asTemplateData = (key, value) ->
   protocol = if backends['https'] then 'https' else 'http'
   {
     "domain": domain,
-    "domain_hashed": sha256(domain),
+    "domain_underscored": domain.replace(/\./g,'_'),
     "name": name,
     "protocol": protocol,
     "servers": (u.host for u in backends[protocol])
   }
 
-updateConfig = () ->
-  hosts = asTemplateData(k,v) for k, v of collection.values() when isFrontend(k)
-  console.log("Entries: ", hosts)
+# Write file, but only if contents differs. Return true if changed, false if not
+writeIfDifferent = (filepath, content, callback) ->
+  fs.readFile filepath, "utf-8", (err, data) ->
+    if data == content
+      callback(null, false)
+    else
+      console.log("Updating: "+filepath)
+      fs.writeFile filepath, content, (err) ->
+        if err
+          callback(err)
+        else
+          callback(null, true)
 
-collection.on(event, updateConfig) for event in ['ready', 'action']
+# Generate files, returning true if file was changed
+generateFile = (outputDir, vhost, template, callback) ->
+  filename = vhost.domain_underscored + ".conf"
+  filepath = path.join(outputDir, filename)
+  rendered = template.render(vhost)
+  writeIfDifferent filepath, rendered, (err, changed) ->
+    if err
+      callback(err)
+    else
+      callback null,
+        file: filename
+        changed: changed
+
+# Generate files, returning true if reload is required
+generateFiles = (outputDir, vhosts, template, callback) ->
+  f = (vhost, cb) ->
+    generateFile(outputDir, vhost, template, cb)
+  async.mapLimit vhosts, 5, f, (err, results) ->
+    if (err)
+      callback(err)
+    else
+      callback null,
+        files: _.pluck(results, 'file')
+        changed: _.any(results, (r) -> r.changed)
+
+removeOldFiles = (outputDir, filesToKeep, callback) ->
+  deleteFile = (filename, callback) ->
+    filepath = path.join(outputDir, filename)
+    console.log("Deleting: "+filepath)
+    fs.unlink filepath, callback
+  fs.readdir outputDir, (err, files) ->
+    filesToRemove = _.difference(files, filesToKeep)
+    async.eachSeries filesToRemove, deleteFile, callback
+
+module.exports = (options) ->
+  template = Hogan.compile(options.template)
+  etcd = etcdjs(options.etcd.servers)
+  collection = liveCollection(etcd, options.etcd.path)
+
+  reloadConfig = (callback) ->
+    console.log("Reloading nginx: "+options.cmd)
+    child_process.exec options.cmd, (error, stdout, stderr) ->
+      callback()
+
+  updateConfig = () ->
+    generateFiles(
+      options.dir,
+      asTemplateData(k,v) for k, v of collection.values() when isFrontend(k),
+      template,
+      (err, result) ->
+        if err
+          console.log(err)
+        else
+          removeOldFiles options.dir, result.files, (err) ->
+            if err
+              console.log(err)
+            else if result.changed
+              # Intentionally not reloading if all we did was delete files, as
+              # this could cause unpleasant consequences if the collection is
+              # falsely empty.
+              reloadConfig(() -> )
+    )
+
+  collection.on(event, updateConfig) for event in ['ready', 'action']

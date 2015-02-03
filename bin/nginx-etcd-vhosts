@@ -1,0 +1,41 @@
+#!/usr/bin/env coffee
+
+env = process.env
+fs = require('fs')
+cli = require('cli')
+nginx_etcd_vhosts = require('../index')
+_ = require("lodash")
+
+cli.setUsage 'nginx-etcd-vhosts [OPTIONS]'
+
+cli.parse
+  'etcd-prefix':  ['p', 'etcd key prefix', 'string', env.HIPACHE_PREFIX || "/"]
+  'etcd-servers': [false, 'comma-delimited etcd server list', 'string', env.ETCDCTL_PEERS || '127.0.0.1:2379']
+  'template':     ['t', 'template file to use', 'path']
+  'output-dir':   ['o', 'directory to generate templates in', 'path', '.']
+  'on-change':    ['c', 'command to run when changes occur', 'string', 'pkill -HUP nginx']
+
+cli.main (args, options) ->
+  if options['template']
+    cli.info('Using template: ' + options['template'])
+  else
+    cli.error('A template must be supplied!')
+    process.exit 1
+
+  stat = fs.statSync(options['output-dir'])
+  if stat.isDirectory()
+    cli.info('Using output dir: ' + options['output-dir'])
+  else
+    cli.error('Invalid output dir: ' + options['output-dir'])
+    process.exit 1
+
+  fs.readFile options['template'], "utf-8", (err, template) ->
+    if err
+      throw err
+    nginx_etcd_vhosts
+      etcd:
+        servers: (options['etcd-servers']).split(',')
+        path: options['etcd-prefix']
+      template: template
+      dir: options['output-dir']
+      cmd: options['on-change']

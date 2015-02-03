@@ -26,7 +26,7 @@ is converted to:
 ```json
 {
   "domain": "my.example.com",
-  "domain_hashed": "e1389c9a53847d15700daf57515e5fc3e023644ad95345c09b32ef9d757b45d6",
+  "domain_underscored": "my_example_com",
   "name": "example",
   "protocol": "http",
   "servers": ["bar:9000", "baz:9000"]
@@ -38,7 +38,7 @@ is converted to:
 Here's an example template:
 
 ```nginx
-upstream vhost_backend_{{domain_hashed}} {
+upstream vhost_backend_{{domain_underscored}} {
   {{#servers}}
   server {{.}};
   {{/servers}}
@@ -50,7 +50,7 @@ server {
 
   location / {
     proxy_set_header "X-Server-Name" "{{name}}"
-    proxy_pass {{protocol}}://vhost_backend_{{domain_hashed}};
+    proxy_pass {{protocol}}://vhost_backend_{{domain_underscored}};
   }
 }
 ```
