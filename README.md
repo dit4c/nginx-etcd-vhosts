@@ -1,5 +1,7 @@
 # nginx-etcd-vhosts
 
+[![Build Status](https://travis-ci.org/dit4c/nginx-etcd-vhosts.svg?branch=master)](https://travis-ci.org/dit4c/nginx-etcd-vhosts)
+
 Hipache is great, but compared to Nginx is can be quite resource intensive. This package is designed as a drop-in replacement for using Hipache with the etcd backend. It's intended to be similar to dotCloud's [Version 1](http://blog.dotcloud.com/under-the-hood-dotcloud-http-routing-layer) solution.
 
 It works by monitoring etcd for changes, and outputing virtual host configurations for each of the defined frontends.
