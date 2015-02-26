@@ -29,6 +29,7 @@
     "test": "node_modules/.bin/gulp"
   },
   "devDependencies": {
+    "chai": "^2.1.0",
     "gulp": "^3.8.11",
     "gulp-coffeelint": "^0.4.0",
     "gulp-mocha": "^2.0.0",
