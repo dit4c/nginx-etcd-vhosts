@@ -1,33 +1,19 @@
-'use strict';
+'use strict'
 
 env = process.env
 async = require('async')
 child_process = require('child_process')
 fs = require('fs')
 path = require('path')
-url = require('url')
 etcdjs = require('etcdjs')
 liveCollection = require('etcd-live-collection')
 _ = require("lodash")
 Hogan = require('hogan.js')
 
+kvp = require('./kv-processor')
+
 isFrontend = (key) ->
   _.startsWith(key.split('/').pop(), "frontend:")
-
-asTemplateData = (key, value) ->
-  domain = key.split('/').pop().split(':').pop()
-  data = JSON.parse(value)
-  name = data.shift()
-  backends = _.groupBy(
-    url.parse(s) for s in data, (u) -> _.trimRight(u.protocol,':'))
-  protocol = if backends['https'] then 'https' else 'http'
-  {
-    "domain": domain,
-    "domain_underscored": domain.replace(/\./g,'_'),
-    "name": name,
-    "protocol": protocol,
-    "servers": (u.host for u in backends[protocol])
-  }
 
 # Write file, but only if contents differs. Return true if changed, false if not
 writeIfDifferent = (filepath, content, callback) ->
@@ -89,7 +75,7 @@ module.exports = (options) ->
   updateConfig = () ->
     generateFiles(
       options.dir,
-      asTemplateData(k,v) for k, v of collection.values() when isFrontend(k),
+      _.compact(kvp(k,v) for k, v of collection.values() when isFrontend(k)),
       template,
       (err, result) ->
         if err

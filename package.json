@@ -25,5 +25,12 @@
     "hogan.js": "^3.0.2",
     "lodash": "^3.0.1"
   },
-  "scripts": {}
+  "scripts": {
+    "test": "node_modules/.bin/gulp"
+  },
+  "devDependencies": {
+    "gulp-coffeelint": "^0.4.0",
+    "gulp-mocha": "^2.0.0",
+    "gulp-util": "^3.0.4"
+  }
 }
