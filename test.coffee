@@ -13,6 +13,7 @@ afterEach () ->
 
 describe 'kv-processor', () ->
   kvp = require('./kv-processor')
+  json = JSON.stringify
 
   it 'is a function', () ->
     expect(kvp).to.be.a('function')
@@ -23,11 +24,21 @@ describe 'kv-processor', () ->
 
   it 'should produce template data', () ->
     json = JSON.stringify
-    r1 = kvp 'frontend:example.test',
+    result = kvp 'frontend:example.test',
       json(["example", "http://bar:9000", "http://baz:9001"])
-    expect(r1).not.to.be.null
-    expect(r1.domain).to.equal('example.test')
-    expect(r1.domain_underscored).to.equal('example_test')
-    expect(r1.name).to.equal('example')
-    expect(r1.protocol).to.equal('http')
-    expect(r1.servers).to.deep.equal(["bar:9000", "baz:9001"])
+    expect(result).not.to.be.null
+    expect(result.domain).to.equal('example.test')
+    expect(result.domain_underscored).to.equal('example_test')
+    expect(result.name).to.equal('example')
+    expect(result.protocol).to.equal('http')
+    expect(result.servers).to.deep.equal(["bar:9000", "baz:9001"])
+
+  it 'should handle mixed backends', () ->
+    result = kvp 'frontend:example.test',
+      json(["example", "http://bar:9000", "https://baz:9001"])
+    expect(result).not.to.be.null
+    expect(result.domain).to.equal('example.test')
+    expect(result.domain_underscored).to.equal('example_test')
+    expect(result.name).to.equal('example')
+    expect(result.protocol).to.equal('https')
+    expect(result.servers).to.deep.equal(['baz:9001'])
