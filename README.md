@@ -4,7 +4,7 @@ Hipache is great, but compared to Nginx is can be quite resource intensive. This
 
 It works by monitoring etcd for changes, and outputing virtual host configurations for each of the defined frontends.
 
-Nginx has supported websockets for some time now, so unlike in the dotCloud experience, you only have to worry about config regeneration overheads. If you have a rate of change for your domain entries, you may prefer a solution based on Nginx + Lua with [hipache-nginx](https://github.com/samalba/hipache-nginx) or [OpenResty](http://openresty.org/#DynamicRoutingBasedOnRedis).
+Nginx has supported websockets for some time now, so unlike in the dotCloud experience, you only have to worry about config regeneration overheads. If you have a high rate of change for your domain entries, you may prefer a solution based on Nginx + Lua with [hipache-nginx](https://github.com/samalba/hipache-nginx) or [OpenResty](http://openresty.org/#DynamicRoutingBasedOnRedis).
 
 ## Limitations
 
